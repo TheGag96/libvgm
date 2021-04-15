@@ -8,47 +8,47 @@
 
 #ifndef SNDDEV_SELECT
 // if not asked to select certain sound devices, just include everything (comfort option)
-#define SNDDEV_SN76496
-#define SNDDEV_YM2413
-#define SNDDEV_YM2612
-#define SNDDEV_YM2151
-#define SNDDEV_SEGAPCM
-#define SNDDEV_RF5C68
-#define SNDDEV_YM2203
-#define SNDDEV_YM2608
-#define SNDDEV_YM2610
-#define SNDDEV_YM3812
-#define SNDDEV_YM3526
-#define SNDDEV_Y8950
-#define SNDDEV_YMF262
-#define SNDDEV_YMF278B
-#define SNDDEV_YMZ280B
-#define SNDDEV_YMF271
-#define SNDDEV_AY8910
-#define SNDDEV_32X_PWM
-#define SNDDEV_GAMEBOY
-#define SNDDEV_NES_APU
-#define SNDDEV_YMW258
-#define SNDDEV_UPD7759
-#define SNDDEV_OKIM6258
-#define SNDDEV_OKIM6295
-#define SNDDEV_K051649
-#define SNDDEV_K054539
-#define SNDDEV_C6280
-#define SNDDEV_C140
-#define SNDDEV_C219
-#define SNDDEV_K053260
-#define SNDDEV_POKEY
-#define SNDDEV_QSOUND
-#define SNDDEV_SCSP
-#define SNDDEV_WSWAN
+// #define SNDDEV_SN76496
+// #define SNDDEV_YM2413
+// #define SNDDEV_YM2612
+// #define SNDDEV_YM2151
+// #define SNDDEV_SEGAPCM
+// #define SNDDEV_RF5C68
+// #define SNDDEV_YM2203
+// #define SNDDEV_YM2608
+// #define SNDDEV_YM2610
+// #define SNDDEV_YM3812
+// #define SNDDEV_YM3526
+// #define SNDDEV_Y8950
+// #define SNDDEV_YMF262
+// #define SNDDEV_YMF278B
+// #define SNDDEV_YMZ280B
+// #define SNDDEV_YMF271
+// #define SNDDEV_AY8910
+// #define SNDDEV_32X_PWM
+// #define SNDDEV_GAMEBOY
+// #define SNDDEV_NES_APU
+// #define SNDDEV_YMW258
+// #define SNDDEV_UPD7759
+// #define SNDDEV_OKIM6258
+// #define SNDDEV_OKIM6295
+// #define SNDDEV_K051649
+// #define SNDDEV_K054539
+// #define SNDDEV_C6280
+// #define SNDDEV_C140
+// #define SNDDEV_C219
+// #define SNDDEV_K053260
+// #define SNDDEV_POKEY
+// #define SNDDEV_QSOUND
+// #define SNDDEV_SCSP
+// #define SNDDEV_WSWAN
 #define SNDDEV_VBOY_VSU
-#define SNDDEV_SAA1099
-#define SNDDEV_ES5503
-#define SNDDEV_ES5506
-#define SNDDEV_X1_010
-#define SNDDEV_C352
-#define SNDDEV_GA20
+// #define SNDDEV_SAA1099
+// #define SNDDEV_ES5503
+// #define SNDDEV_ES5506
+// #define SNDDEV_X1_010
+// #define SNDDEV_C352
+// #define SNDDEV_GA20
 #endif
 
 #ifdef SNDDEV_SN76496

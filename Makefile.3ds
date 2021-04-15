@@ -19,19 +19,30 @@ USE_LIBAO = 1
 USE_PULSE = 1
 endif
 
-CC = gcc
-CXX = g++
+CC = $(DEVKITARM)/bin/arm-none-eabi-gcc
+CXX = $(DEVKITARM)/bin/arm-none-eabi-g++
 PREFIX = /usr/local
 MANPREFIX = $(PREFIX)/share/man
 
+export PORTLIBS_PATH	:=	$(DEVKITPRO)/portlibs
+PORTLIBS	:=	$(PORTLIBS_PATH)/3ds
+export PATH := $(PORTLIBS_PATH)/3ds/bin:$(PATH)
+3DS_INCLUDES = -I$(PORTLIBS)/include
+3DS_LIBDIRS = -L$(PORTLIBS)/lib
+
 ifeq ($(DEBUG), 1)
-CFLAGS := -O0 -g $(CFLAGS) -D_DEBUG -I.
+CFLAGS := -O0 -g $(CFLAGS) -D_DEBUG -I. $(3DS_INCLUDES)
 else
-CFLAGS := -O2 -g0 $(CFLAGS) -I.
+CFLAGS := -O2 -g0 $(CFLAGS) -I. $(3DS_INCLUDES)
 endif
 CCFLAGS = -std=gnu90
 CXXFLAGS = -std=gnu++98
 ARFLAGS = -cr
+AR = $(DEVKITARM)/bin/arm-none-eabi-ar
+
+ARCH	=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
+CFLAGS += -mword-relocations -fomit-frame-pointer -ffunction-sections $(ARCH)
+CXXFLAGS += -mword-relocations -fomit-frame-pointer -ffunction-sections -fno-rtti -fno-exceptions $(ARCH)
 
 CFLAGS += -Wall
 #CFLAGS += -Wextra
@@ -70,12 +81,14 @@ ifeq ($(WINDOWS), 1)
 LDFLAGS += -lkernel32 -lwinmm -ldsound -luuid -lole32
 else
 # for Linux add pthread support (-pthread should include -lpthread)
-LDFLAGS += -lrt -pthread
-CFLAGS += -pthread -DSHARE_PREFIX=\"$(PREFIX)\"
+# LDFLAGS += -lrt -pthread
+# CFLAGS += -pthread -DSHARE_PREFIX=\"$(PREFIX)\"
 
 # add librt (clock stuff)
 #LDFLAGS += -lrt
 endif
+
+
 
 SRC = .
 OBJ = obj
@@ -209,64 +222,64 @@ VGMPLAYER_MAINOBJS = \
 all:	audiotest emutest audemutest vgmtest plrtest
 
 audiotest:	dirs libaudio $(UTILOBJS) $(AUD_MAINOBJS)
-	echo Linking audiotest ...
-	$(CC) $(UTILOBJS) $(AUD_MAINOBJS) $(LIBAUD_A) $(LDFLAGS) -o $@
-	echo Done.
+	@echo Linking audiotest ...
+	@$(CC) $(UTILOBJS) $(AUD_MAINOBJS) $(LIBAUD_A) $(LDFLAGS) -o $@
+	@echo Done.
 
 libaudio:	$(LIBAUDOBJS)
-	echo Archiving libaudio.a ...
+	@echo Archiving libaudio.a ...
 	$(AR) $(ARFLAGS) $(LIBAUD_A) $(LIBAUDOBJS)
 
 emutest:	dirs libemu $(EMU_MAINOBJS)
-	echo Linking emutest ...
-	$(CC) $(EMU_MAINOBJS) $(LIBEMU_A) $(LDFLAGS) -lm -o $@
-	echo Done.
+	@echo Linking emutest ...
+	@$(CC) $(EMU_MAINOBJS) $(LIBEMU_A) $(LDFLAGS) -lm -o $@
+	@echo Done.
 
 libemu:	$(LIBEMUOBJS)
-	echo Archiving libemu.a ...
-	$(AR) $(ARFLAGS) $(LIBEMU_A) $(LIBEMUOBJS)
+	@echo Archiving libemu.a ...
+	@$(AR) $(ARFLAGS) $(LIBEMU_A) $(LIBEMUOBJS)
 
 audemutest:	dirs libaudio libemu $(UTILOBJS) $(AUDEMU_MAINOBJS)
-	echo Linking audemutest ...
-	$(CC) $(UTILOBJS) $(AUDEMU_MAINOBJS) $(LIBAUD_A) $(LIBEMU_A) $(LDFLAGS) -lm -o $@
-	echo Done.
+	@echo Linking audemutest ...
+	@$(CC) $(UTILOBJS) $(AUDEMU_MAINOBJS) $(LIBAUD_A) $(LIBEMU_A) $(LDFLAGS) -lm -o $@
+	@echo Done.
 
 vgmtest:	dirs libaudio libemu $(UTILOBJS) $(VGMTEST_MAINOBJS)
-	echo Linking vgmtest ...
-	$(CC) $(UTILOBJS) $(VGMTEST_MAINOBJS) $(LIBAUD_A) $(LIBEMU_A) $(LDFLAGS) -lz -lm -o $@
-	echo Done.
+	@echo Linking vgmtest ...
+	@$(CC) $(UTILOBJS) $(VGMTEST_MAINOBJS) $(LIBAUD_A) $(LIBEMU_A) $(LDFLAGS) -lz -lm -o $@
+	@echo Done.
 
 plrtest:	dirs libaudio libemu $(UTILOBJS) $(PLAYER_MAINOBJS)
-	echo Linking $@ ...
-	$(CXX) $(UTILOBJS) $(PLAYER_MAINOBJS) $(LIBAUD_A) $(LIBEMU_A) $(LDFLAGS) -lz -lm -o $@
-	echo Done.
+	@echo Linking $@ ...
+	@$(CXX) $(UTILOBJS) $(PLAYER_MAINOBJS) $(LIBAUD_A) $(LIBEMU_A) $(LDFLAGS) -lz -lm -o $@
+	@echo Done.
 
 vgm_dbcompr_bench:	vgm_dbcompr_bench.c vgm/dblk_compr.c
-	echo Compiling+Linking vgm_dbcompr_bench
-	$(CC) $(CFLAGS) $(CCFLAGS) $^ $(LDFLAGS) -o vgm_dbcompr_bench
-	echo Done.
+	@echo Compiling+Linking vgm_dbcompr_bench
+	@$(CC) $(CFLAGS) $(CCFLAGS) $^ $(LDFLAGS) -o vgm_dbcompr_bench
+	@echo Done.
 
 vgmplayer: dirs libemu $(UTILOBJS) $(VGMPLAYER_MAINOBJS)
-	echo Archiving vgmplayer.a ...
+	@echo Archiving vgmplayer.a ...
 	$(AR) $(ARFLAGS) $(VGMPLAYER_A) $(VGMPLAYER_MAINOBJS)
 
 
 dirs:
-	mkdir -p $(OBJDIRS)
+	@mkdir -p $(OBJDIRS)
 
 $(OBJ)/%.o: $(SRC)/%.c
-	echo Compiling $< ...
+	@echo Compiling $< ...
 	$(CC) $(CFLAGS) $(CCFLAGS) -c $< -o $@
 
 $(OBJ)/%.o: $(SRC)/%.cpp
-	echo Compiling $< ...
+	@echo Compiling $< ...
 	$(CXX) $(CFLAGS) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	echo Deleting object files ...
-	rm -f $(AUD_MAINOBJS) $(EMU_MAINOBJS) $(AUDEMU_MAINOBJS) $(VGMTEST_MAINOBJS) $(S98TEST_MAINOBJS) $(ALL_LIBS) $(LIBAUDOBJS) $(LIBEMUOBJS) $(PLAYER_MAINOBJS) $(VGMPLAYER_MAINOBJS)
-	echo Deleting executable files ...
-	rm -f audiotest emutest audemutest vgmtest
-	echo Done.
+	@echo Deleting object files ...
+	@rm -f $(AUD_MAINOBJS) $(EMU_MAINOBJS) $(AUDEMU_MAINOBJS) $(VGMTEST_MAINOBJS) $(S98TEST_MAINOBJS) $(ALL_LIBS) $(LIBAUDOBJS) $(LIBEMUOBJS) $(PLAYER_MAINOBJS) $(VGMPLAYER_MAINOBJS)
+	@echo Deleting executable files ...
+	@rm -f audiotest emutest audemutest vgmtest
+	@echo Done.
 
 #.PHONY: all clean install uninstall

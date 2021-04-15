@@ -30,6 +30,11 @@
 #include "helper.h"
 #include "logging.h"
 
+#include "utils/DataLoader.h"
+#include "utils/MemoryLoader.h"
+
+#include <cstdio>
+
 /*static*/ const UINT8 VGMPlayer::_OPT_DEV_LIST[_OPT_DEV_COUNT] =
 {
 	DEVID_SN76496, DEVID_YM2413, DEVID_YM2612, DEVID_YM2151, DEVID_SEGAPCM, DEVID_RF5C68, DEVID_YM2203, DEVID_YM2608,
@@ -169,8 +174,8 @@ VGMPlayer::VGMPlayer() :
 		}
 	}
 	
-	retVal = CPConv_Init(&_cpcUTF16, "UTF-16LE", "UTF-8");
-	if (retVal)
+	// retVal = CPConv_Init(&_cpcUTF16, "UTF-16LE", "UTF-8");
+	// if (retVal)
 		_cpcUTF16 = NULL;
 	memset(&_pcmComprTbl, 0x00, sizeof(PCM_COMPR_TBL));
 	_tagList[0] = NULL;
@@ -185,8 +190,8 @@ VGMPlayer::~VGMPlayer()
 		Stop();
 	UnloadFile();
 	
-	if (_cpcUTF16 != NULL)
-		CPConv_Deinit(_cpcUTF16);
+	// if (_cpcUTF16 != NULL)
+	// 	CPConv_Deinit(_cpcUTF16);
 	
 	return;
 }
@@ -426,13 +431,13 @@ UINT8 VGMPlayer::LoadTags(void)
 			break;
 		
 		// search for UTF-16 L'\0' character
-		while(curPos < eotPos && ReadLE16(&_fileData[curPos]) != L'\0')
-			curPos += 0x02;
-		_tagData[curTag] = GetUTF8String(&_fileData[startPos], &_fileData[curPos]);
-		curPos += 0x02;	// skip '\0'
+		// while(curPos < eotPos && ReadLE16(&_fileData[curPos]) != L'\0')
+		// 	curPos += 0x02;
+		// _tagData[curTag] = GetUTF8String(&_fileData[startPos], &_fileData[curPos]);
+		// curPos += 0x02;	// skip '\0'
 		
 		*(tagListEnd++) = _TAG_TYPE_LIST[curTag];
-		*(tagListEnd++) = _tagData[curTag].c_str();
+		*(tagListEnd++) = "";
 	}
 	
 	*tagListEnd = NULL;
@@ -1703,4 +1708,126 @@ void VGMPlayer::ParseFile(UINT32 ticks)
 	}
 	
 	return;
+}
+
+VGMPlayer*   gVgmPlayer = NULL;
+DATA_LOADER* gDLoad     = NULL;
+UINT8*       gFileData  = NULL;
+
+static UINT8 *SlurpFile(const char *fileName, UINT32 *fileSize) {
+	*fileSize = 0;
+	FILE *hFile = fopen(fileName,"rb");
+	UINT32 hFileSize;
+	UINT8 *fileData;
+	if(hFile == NULL) return NULL;
+	fseek(hFile,0,SEEK_END);
+	hFileSize = ftell(hFile);
+	rewind(hFile);
+	fileData = (UINT8 *)malloc(hFileSize);
+	if(fileData == NULL) {
+		fclose(hFile);
+		return NULL;
+	}
+	if(fread(fileData,1,hFileSize,hFile) != hFileSize) {
+		free(fileData);
+		fclose(hFile);
+		return NULL;
+	}
+	fclose(hFile);
+	*fileSize = hFileSize;
+	return fileData;
+}
+
+extern "C" void vgm_init_player() {
+	if (gVgmPlayer) return;
+
+	gVgmPlayer = new VGMPlayer;
+}
+
+extern "C" void vgm_deinit_player() {
+	if (gVgmPlayer) {
+		gVgmPlayer->Stop();
+		gVgmPlayer->UnloadFile();
+		delete gVgmPlayer;
+		gVgmPlayer = NULL;
+	}
+
+	if (gDLoad) {
+		DataLoader_Deinit(gDLoad);
+		gDLoad = NULL;
+	}
+
+	if (gFileData) {
+		free(gFileData);
+		gFileData = NULL;
+	}
+}
+
+extern "C" UINT8 vgm_load_file(const char* path) {
+	if (!gVgmPlayer) return 1;
+
+	UINT8 retVal = 0;
+
+	retVal = gVgmPlayer->Stop();
+	if (retVal) return retVal;
+
+	if (gDLoad) {
+		DataLoader_Deinit(gDLoad);
+		gDLoad = NULL;
+	}
+
+	if (gFileData) {
+		free(gFileData);
+		gFileData = NULL;
+	}
+
+	UINT32 fileSize;
+	gFileData = SlurpFile(path, &fileSize);
+
+	if (gFileData == NULL) return 1;
+
+	gDLoad = MemoryLoader_Init(gFileData, fileSize);
+
+	if (gDLoad == NULL) return 1;
+
+	DataLoader_SetPreloadBytes(gDLoad,0x100);
+	retVal = DataLoader_Load(gDLoad);
+
+	if (retVal)	{
+		DataLoader_CancelLoading(gDLoad);
+		return retVal;
+	}
+
+	gVgmPlayer->UnloadFile();
+	retVal = gVgmPlayer->LoadFile(gDLoad);
+
+	if (retVal)	{
+		DataLoader_CancelLoading(gDLoad);
+		return retVal;
+	}
+
+	retVal = gVgmPlayer->Start();
+
+	return retVal;
+}
+
+extern "C" UINT32 vgm_render(UINT32 smplCnt, WAVE_32BS* data) {
+	if (!gVgmPlayer || !gDLoad) return 0;
+
+	//this is needed because VGMPlayer::Render does not clear the buffer itself and will just add on to each sample
+	memset(data, 0, smplCnt * sizeof(WAVE_32BS));
+
+	return gVgmPlayer->Render(smplCnt, data);
+}
+
+extern "C" UINT8 vgm_set_sample_rate(UINT32 sampleRate) {
+	if (!gVgmPlayer) return 0;
+
+	return gVgmPlayer->SetSampleRate(sampleRate);
+}
+
+extern "C" UINT8 vgm_seek(UINT8 unit, UINT32 pos) {
+	if (!gVgmPlayer) return 0;
+
+	return gVgmPlayer->Seek(unit, pos);
 }
