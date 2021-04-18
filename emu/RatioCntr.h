@@ -3,6 +3,8 @@
 
 #include "../common_def.h"
 
+#define LOW_PRECISION_RATIOCNTR 1
+
 #if ! LOW_PRECISION_RATIOCNTR
 // by default we use a high-precision 32.32 fixed point counter
 #define RC_SHIFT	32
